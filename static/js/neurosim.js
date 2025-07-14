@@ -75,7 +75,6 @@ window.onload = () => {
 
         area.innerHTML = html;
 
-        // Save for download
         window.latestReportData = data;
     }
 
@@ -184,7 +183,6 @@ window.onload = () => {
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // connections
         connections.forEach(conn => {
             const fromNeuron = neurons.find(n => n.id === conn.from);
             const toNeuron = neurons.find(n => n.id === conn.to);
@@ -203,7 +201,7 @@ window.onload = () => {
             const anim = activeConnectionAnimations[i];
             const elapsed = now - anim.startTime;
             if (elapsed > anim.duration) {
-                activeConnectionAnimations.splice(i, 1);  // remove finished animations
+                activeConnectionAnimations.splice(i, 1);
                 continue;
             }
             const t = elapsed / anim.duration;
@@ -219,12 +217,11 @@ window.onload = () => {
         }
 
         neurons.forEach(neuron => {
-            // Draw pulsing ring if firing
             const fireStart = firingMap[neuron.id];
             const now = Date.now();
             if (fireStart) {
                 const elapsed = now - fireStart;
-                if (elapsed < 300) {  // ring lasts 300ms
+                if (elapsed < 300) {
                     const maxRingRadius = neuronRadius + 5;
                     const ringRadius = neuronRadius + (elapsed / 300) * neuronRadius * 0.75;
                     const alpha = 1 - elapsed / 300;
@@ -235,16 +232,13 @@ window.onload = () => {
                     ctx.lineWidth = 4;
                     ctx.stroke();
                 } else {
-                    // Remove firingMap after animation finishes
                     delete firingMap[neuron.id];
                 }
             }
 
-            // Draw neuron circle
             ctx.beginPath();
             ctx.arc(neuron.x, neuron.y, neuronRadius, 0, Math.PI * 2);
 
-            // Existing color logic (replace with your improved one for firing/cooldown)
             const lastFired = cooldownMap[neuron.id];
             const isCooldown = lastFired && (now - lastFired < 1000);
 

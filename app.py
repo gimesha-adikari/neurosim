@@ -1,10 +1,9 @@
 from flask import Flask, render_template, jsonify, request, session
 from flask_session import Session
-from datetime import datetime
 from simulation import NeuralNet, initialize_db
 from auth import auth
 from cs50 import SQL
-from datetime import datetime, timedelta
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -165,7 +164,6 @@ def generate_report():
                              WHERE from_id IN (SELECT id FROM neurons WHERE user_id = ?)
                              """, user_id)
 
-    # Fetch firing counts grouped by second
     firing_rows = db.execute("""
                              SELECT strftime('%Y-%m-%d %H:%M:%S', fired_at) AS time_bin, COUNT(*) AS count
                              FROM firing_events
@@ -174,21 +172,18 @@ def generate_report():
                              ORDER BY time_bin ASC
                              """, user_id)
 
-    # Convert to simple time offsets and counts for chart
     if firing_rows:
         first_time = datetime.strptime(firing_rows[0]['time_bin'], "%Y-%m-%d %H:%M:%S")
         firing_activity = []
         for row in firing_rows:
             current_time = datetime.strptime(row['time_bin'], "%Y-%m-%d %H:%M:%S")
             delta_sec = int((current_time - first_time).total_seconds())
-            # Extend list length if needed
             while len(firing_activity) <= delta_sec:
                 firing_activity.append(0)
             firing_activity[delta_sec] = row['count']
     else:
         firing_activity = []
 
-    # Calculate average firing rate (total firings / total time in seconds)
     total_firings = sum(row['count'] for row in firing_rows)
     duration = (datetime.strptime(firing_rows[-1]['time_bin'],
                                   "%Y-%m-%d %H:%M:%S") - first_time).total_seconds() if firing_rows else 0
