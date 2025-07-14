@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block title %}Simulator - NeuroSim{% endblock %}
+{% block content %}
+<h2 class="mb-4">Neural Network Simulator</h2>
+<p class="text-muted">This canvas will show neural behavior simulation. More features coming soon!</p>
+
+<div class="text-center mt-4">
+    <div id="controls" class="mb-3">
+        <button id="stimulateBtn" class="btn btn-primary me-2">🧠 Stimulate</button>
+        <button id="addNeuronBtn" class="btn btn-success me-2">➕ Add Neuron</button>
+        <button id="clearNetworkBtn" class="btn btn-danger me-2">🗑️ Reset Network</button>
+        <button id="autoConnectBtn" class="btn btn-warning">🔗 Auto Connect</button>
+        <button id="autoStimulateBtn" class="btn btn-info me-2">🔁 Auto Stimulate</button>
+    </div>
+    <div>
+        <label for="neuronSizeSlider">Neuron Size: <span id="neuronSizeLabel">10</span>px</label>
+        <input type="range" min="5" max="30" value="10" id="neuronSizeSlider" class="form-range"
+               style="width: 300px; display: inline-block; margin-left: 10px;">
+        <label for="canvasWidth">Canvas Width:</label>
+        <input type="number" id="canvasWidth" value="1300" min="300" max="2000" step="10" style="width: 80px;">
+    </div>
+    <canvas id="brainCanvas" width="1300" height="600" class="border border-secondary rounded shadow-sm"></canvas>
+    <h3 class="mt-5">📝 Network Report</h3>
+    <div id="reportArea" class="mt-3 p-3 border rounded bg-light" style="max-height: 300px; overflow: auto;">
+        <em>Loading report...</em>
+    </div>
+    <div class="mt-2">
+        <button id="downloadCSV" class="btn btn-outline-primary btn-sm">⬇️ Download CSV</button>
+    </div>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/neurosim.js') }}"></script>
+{% endblock %}

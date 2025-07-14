@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block title %}Home - NeuroSim{% endblock %}
+{% block content %}
+<div class="text-center">
+  <h1 class="display-4 mb-3">Welcome to NeuroSim</h1>
+  <p class="lead">Simulate neurons firing and interacting visually in your browser.</p>
+  <a href="{{ url_for('simulate') }}" class="btn btn-primary btn-lg mt-4">Launch Simulator</a>
+</div>
+{% endblock %}

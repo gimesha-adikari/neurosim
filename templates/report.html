@@ -1,0 +1,188 @@
+{% extends "layout.html" %}
+{% block title %}Simulation Report - NeuroSim{% endblock %}
+
+{% block content %}
+<div>
+    <div class="mb-3">
+        <button id="generateReportBtn" class="btn btn-info">📄 Refresh Report</button>
+        <button id="downloadCSV" class="btn btn-outline-success ms-2">⬇️ Download CSV</button>
+        <button id="downloadPDF" class="btn btn-outline-danger ms-2">📄 Download PDF</button>
+    </div>
+</div>
+<div id="full_report">
+
+    <div>
+        <div class="mb-3">
+            <h2 class="mb-4">📊 Simulation Report</h2>
+        </div>
+    </div>
+    <p class="text-muted">This is the results of your latest neural simulations.</p>
+
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">Summary</div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">Total Neurons Simulated: <strong id="neuronCount">–</strong></li>
+                <li class="list-group-item">Total Connections: <strong id="connectionCount">–</strong></li>
+                <li class="list-group-item">Average Firing Rate: <strong id="avgFiring">–</strong></li>
+                <li class="list-group-item">Duration: <strong id="simDuration">–</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="mt-5">
+        <h5>Firing Activity Chart</h5>
+        <canvas id="firingChart" width="600" height="300"></canvas>
+    </div>
+</div>
+
+<!-- Optional Neuron Details -->
+<div class="mt-5">
+    <h5>Neuron Details</h5>
+    <div id="reportArea" class="small"></div>
+</div>
+
+<!-- Chart.js & jsPDF -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+    let firingChart;
+
+    async function loadReport() {
+        const res = await fetch("/api/report");
+        const area = document.getElementById("reportArea");
+
+        if (!res.ok) {
+            area.innerHTML = `<span class="text-danger">Error loading report</span>`;
+            return;
+        }
+
+        const data = await res.json();
+        window.latestReportData = data;
+
+        // Summary
+        document.getElementById("neuronCount").textContent = data.neurons?.length ?? "0";
+        document.getElementById("connectionCount").textContent = data.connections?.length ?? "0";
+        document.getElementById("avgFiring").textContent = data.avg_firing_rate !== undefined ? data.avg_firing_rate.toFixed(2) + " Hz" : "N/A";
+        document.getElementById("simDuration").textContent = data.duration ? data.duration + " seconds" : "N/A";
+
+        // Neuron list
+        if (data.neurons && data.neurons.length > 0) {
+            let html = "<ul class='list-group'>";
+            data.neurons.forEach(n => {
+                html += `<li class='list-group-item'>Neuron ID ${n.id} — (x=${n.x}, y=${n.y}, threshold=${n.threshold})</li>`;
+            });
+            html += "</ul>";
+            area.innerHTML = html;
+        } else {
+            area.innerHTML = "<p>No neuron data available.</p>";
+        }
+
+        // Prepare chart labels and data
+        const chartLabels = (data.firing_activity?.length > 0)
+            ? data.firing_activity.map((_, i) => `${i}s`)
+            : [];
+        const chartData = data.firing_activity || [];
+
+        // Destroy existing chart instance if exists
+        if (firingChart) firingChart.destroy();
+
+        const ctx = document.getElementById("firingChart").getContext("2d");
+        firingChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Firing Rate (Hz)',
+                    data: chartData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.2,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {beginAtZero: true}
+                },
+                plugins: {
+                    legend: {display: true}
+                }
+            }
+        });
+    }
+
+    function exportCSV() {
+        if (!window.latestReportData || !window.latestReportData.neurons) return;
+        const rows = [["Neuron ID", "X", "Y", "Threshold"]];
+        window.latestReportData.neurons.forEach(n => {
+            rows.push([n.id, n.x, n.y, n.threshold]);
+        });
+        const csv = rows.map(r => r.join(",")).join("\n");
+        const blob = new Blob([csv], {type: "text/csv"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "neurons_report.csv";
+        a.click();
+    }
+
+    async function exportPDF() {
+        const fullReport = document.getElementById("full_report");
+        if (!fullReport || !window.jspdf) {
+            alert("Required elements not found");
+            return;
+        }
+
+        const {jsPDF} = window.jspdf;
+
+        // Backup current style
+        const originalTransform = fullReport.style.transform;
+        const originalTransformOrigin = fullReport.style.transformOrigin;
+        const originalWidth = fullReport.style.width;
+
+        // Shrink and scale the content to look like a smaller window
+        fullReport.style.width = "600px";  // mimic half screen
+        fullReport.style.transform = "scale(0.75)";
+        fullReport.style.transformOrigin = "top left";
+
+        // Wait for the DOM to reflow
+        await new Promise(r => setTimeout(r, 100));
+
+        const canvas = await html2canvas(fullReport, {
+            scale: 2,
+            useCORS: true
+        });
+
+        // Restore original style
+        fullReport.style.transform = originalTransform;
+        fullReport.style.transformOrigin = originalTransformOrigin;
+        fullReport.style.width = originalWidth;
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const imgWidth = pageWidth - 20; // margin
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+        pdf.save("neurosim_report.pdf");
+    }
+
+
+    document.getElementById("generateReportBtn").addEventListener("click", loadReport);
+    document.getElementById("downloadCSV").addEventListener("click", exportCSV);
+    document.getElementById("downloadPDF").addEventListener("click", exportPDF);
+
+    window.onload = loadReport;
+</script>
+{% endblock %}
