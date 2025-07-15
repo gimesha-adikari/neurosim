@@ -16,10 +16,11 @@
         <label for="neuronSizeSlider">Neuron Size: <span id="neuronSizeLabel">10</span>px</label>
         <input type="range" min="5" max="30" value="10" id="neuronSizeSlider" class="form-range"
                style="width: 300px; display: inline-block; margin-left: 10px;">
-        <label for="canvasWidth">Canvas Width:</label>
-        <input type="number" id="canvasWidth" value="1300" min="300" max="2000" step="10" style="width: 80px;">
     </div>
-    <canvas id="brainCanvas" width="1300" height="600" class="border border-secondary rounded shadow-sm"></canvas>
+    <div style="width: 100%; overflow: auto;">
+        <canvas id="brainCanvas" class="border border-secondary rounded shadow-sm"
+                style="width: 100%; height: auto;"></canvas>
+    </div>
     <h3 class="mt-5">📝 Network Report</h3>
     <div id="reportArea" class="mt-3 p-3 border rounded bg-light" style="max-height: 300px; overflow: auto;">
         <em>Loading report...</em>

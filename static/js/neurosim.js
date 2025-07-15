@@ -370,15 +370,6 @@ window.onload = () => {
         sizeLabel.textContent = neuronRadius;
     });
 
-    const canvasWidthInput = document.getElementById("canvasWidth");
-
-    canvasWidthInput.addEventListener("input", () => {
-        const newWidth = parseInt(canvasWidthInput.value);
-        if (!isNaN(newWidth)) {
-            canvas.width = newWidth;
-            draw();
-        }
-    });
 
     function exportCSV() {
         if (!window.latestReportData) return;
@@ -399,6 +390,32 @@ window.onload = () => {
 
 
     document.getElementById("downloadCSV").addEventListener("click", exportCSV);
+
+    function resizeCanvas() {
+        const canvas = document.getElementById('brainCanvas');
+        const containerWidth = canvas.parentElement.clientWidth;
+
+        const ctx = canvas.getContext('2d');
+
+        const ratio = window.devicePixelRatio || 1;
+
+        canvas.width = containerWidth * ratio;
+        canvas.height = Math.floor(containerWidth * 0.45 * ratio);
+
+        canvas.style.width = containerWidth + "px";
+        canvas.style.height = Math.floor(containerWidth * 0.45) + "px";
+
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        if (typeof redrawNetwork === "function") {
+            redrawNetwork(); // you must define this in your code
+        }
+    }
+
+
+    window.addEventListener("load", resizeCanvas);
+
+    window.addEventListener("resize", resizeCanvas);
 
 
     loadNetwork();
