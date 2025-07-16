@@ -6,7 +6,7 @@ from cs50 import SQL
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = "d77fa5cdb70ffed9155914b39bde61ec981c6b5d5b459e4e11b1f8fc40672373"
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 app.register_blueprint(auth)
